@@ -234,6 +234,16 @@ app.post("/getproductbyId",async(req,res)=>{
     }
 })
 
+const streamUpload = (fileBuffer) => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream((error, result) => {
+      if (result) resolve(result);
+      else reject(error);
+    });
+    streamifier.createReadStream(fileBuffer).pipe(stream);
+  });
+};
+
 app.put("/updateItems/:id",upload.single("image"),async(req,res)=>{
     try{
         const id=req.params.id;
@@ -244,7 +254,7 @@ app.put("/updateItems/:id",upload.single("image"),async(req,res)=>{
             category:req.body.category,
         }
             if (req.file) {
-               const result = await streamUpload(req.file); // use same streamUpload function
+               const result = await streamUpload(req.file.buffer); 
                updateData.image = result.secure_url;
             }
     
