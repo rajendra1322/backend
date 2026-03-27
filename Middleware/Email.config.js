@@ -6,7 +6,7 @@ import nodemailer from 'nodemailer'
   secure: true, // Use true for port 465, false for port 587
   auth: {
     user: "rajendraacharyarr@gmail.com",
-    pass: "gnjezzjduaksalvq"
+    pass: process.env.EMAIL_PASS
     
   },
 });
