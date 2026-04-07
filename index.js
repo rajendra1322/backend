@@ -9,7 +9,6 @@ import streamifier from 'streamifier';
 
 
 const app=express()
-import cors from "cors";
 app.use(cors({
   origin: "*", 
   credentials: true
