@@ -9,7 +9,11 @@ import streamifier from 'streamifier';
 
 
 const app=express()
-app.use(cors());
+import cors from "cors";
+app.use(cors({
+  origin: "*", 
+  credentials: true
+}));
 app.use(express.json());
 dotenv.config();
 
