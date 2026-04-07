@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import mongoose from 'mongoose';
-import { SendVerification } from './Middleware/Email.js';
+import{ SendVerification} from './Middleware/Onefile.js';
 import dotenv from "dotenv";
 import multer, { MulterError } from 'multer';
 import { v2 as cloudinary } from 'cloudinary';
@@ -48,32 +48,46 @@ const user=mongoose.model("user",userSchema);
 
 
 
-app.post("/signin",async(req,res)=>{
-    try{
-    const {number,email}=req.body;
-    console.log(req.body);
-    if(!/^[7-9]\d{9}$/.test(number)){
-        return res.json({message:"Invalid number"});
+app.post("/signin", async (req, res) => {
+    console.log("signin api hit...");
+  try {
+    const { number, email } = req.body;
 
-    }
-    const existingUser=await user.findOne({email});
-        console.log("existing..");
-    if(existingUser){
-        return res.json({message:" already registered"});
-    }
-    const verificationCode=Math.floor(100000+Math.random()*900000).toString();
-    const newUser=new user({number,email:email.toLowerCase(),verificationCode});
-    await newUser.save();
-    SendVerification(email,verificationCode)
-    res.json({message:"user saved successfully"})
-    
-    }
-    catch(err){
-        console.log(err);
-        console.log("server error...");
+    console.log("Request:", req.body);
 
+    if (!/^[7-9]\d{9}$/.test(number)) {
+      return res.json({ message: "Invalid number" });
     }
-})
+
+    let existingUser = await user.findOne({ email });
+
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+    if (existingUser) {
+      console.log("User exists → updating OTP");
+
+      existingUser.verificationCode = verificationCode;
+      await existingUser.save();
+
+    } else {
+      console.log("New user → creating");
+
+      const newUser = new user({
+        number,
+        email: email.toLowerCase(),
+        verificationCode,
+      });
+
+      await newUser.save();
+    }
+    await SendVerification(email, verificationCode);
+    return res.json({ message: "OTP sent successfully" });
+
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ message: "Server error" });
+  }
+});
 app.get("/getuser",async(req,res)=>{
     const femail=await user.find();
     if(!femail){
@@ -397,6 +411,7 @@ app.post("/ordersave",async(req,res)=>{
         deliveryaddress
     })
     await neworder.save();
+    console.log(neworder);
 }
 catch(err){
     console.log(err);
@@ -416,45 +431,6 @@ catch(err){
     console.log(err);
 }
 })
-const addressSchema=mongoose.Schema({
-    Rname:{type:String,required:true},
-    Rnumber:{type:String,required:true},
-    pincode:{type:String,required:true},
-    houseNumber:{type:String,required:true},
-    area:{type:String,required:true},
-    address:{type:String,required:true},
-    building:{type:String,required:true},
-
-});
-const useraddress=mongoose.model("useraddress",addressSchema);
-app.post("/saveaddress",async(req,res)=>{
-    try{
-        const addressdata=req.body;
-        const newaddress=new useraddress(addressdata);
-        await newaddress.save();
-        res.json({message:"address saved..",data:newaddress});
-        
-    }
-    catch(err){
-        console.log(err);
-    }
-})
-
-app.get("/getaddress",async(req,res)=>{
-    try{
-        const getaddress= await useraddress.find();
-        if(!useraddress){
-            return res.json([]);
-        }
-        res.json(getaddress);
-
-    }
-    catch(err){
-        console.log(err);
-    }
-})
-
-
 const port=process.env.PORT || 5000;
 
 app.listen(port,()=>{

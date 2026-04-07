@@ -1,16 +1,24 @@
-import nodemailer from 'nodemailer'
 
- export const transporter = nodemailer.createTransport({
+import nodemailer from "nodemailer";
+import dotenv from 'dotenv';
+
+dotenv.config();
+ console.log("EMAIL:", process.env.EMAIL);
+console.log("PASS:", process.env.EMAIL_PASS);
+
+export const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
-  port: 465,
-  secure: true, // Use true for port 465, false for port 587
+  port: 587,
+  secure: false,
   auth: {
-    user: "rajendraacharyarr@gmail.com",
-    pass: process.env.EMAIL_PASS
-    
+    user: process.env.EMAIL,
+    pass: process.env.EMAIL_PASS,
   },
 });
 
+
 transporter.verify()
-  .then(() => console.log("SMTP Connected"))
-  .catch(err => console.log(err));
+  .then(() => console.log("SMTP connected"))
+  .catch((err) => {
+    console.error("SMTP connection failed:", err.message);
+  });
