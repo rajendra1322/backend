@@ -351,9 +351,6 @@ users:[{
     phone:{
         type:String,
         required:true,
-    },
-    category:{
-        type:String,
     }
 
 }],
@@ -372,7 +369,21 @@ totalamount:Number,
 createdAt:{
     type:Date,
     default:Date.now
-}
+},
+status:{
+    type:String,
+    enum:[
+      "Placed",
+      "Confirmed",
+      "Packed",
+      "Shipped",
+      "Out for Delivery",
+      "Delivered",
+      "Cancelled",
+    ],
+    default:"Placed",
+},
+
     
 });
 const order=mongoose.model("order",orderschema);
@@ -381,10 +392,11 @@ app.post("/ordersave",async(req,res)=>{
     const{products,users,paymentType,deliveryaddress}=req.body;
     const usersArray = Array.isArray(users) ? users : [users];
     const formateduser=usersArray.map(user=>({
-        id:user.id,
+        id:user._id || user.id,
         usermail:user.email,
         phone:user.number,
     }))
+    console.log(user);
     const fullproducts=await Promise.all(
         products.map(async(item)=>{
             const productdata=await product.findById(item.productId);
@@ -434,6 +446,27 @@ catch(err){
     console.log(err);
 }
 })
+
+app.put("/status/:id", async (req, res) => {
+  try {
+    const { status } = req.body;
+
+    const updatedOrder = await order.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { returnDocument: "after" }
+    );
+
+    res.json(updatedOrder);
+  } catch (err) {
+    res.status(500).json({ message: "Error updating status" });
+  }
+});
+
+app.get("/status/orders", async (req, res) => {
+  const orders = await order.find().sort({ createdAt: -1 });
+  res.json(orders);
+});
 const port=process.env.PORT || 5000;
 
 app.listen(port,()=>{
