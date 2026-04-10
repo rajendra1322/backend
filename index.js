@@ -487,13 +487,13 @@ app.post("/razorpayorder", async (req, res) => {
         console.log("Total Amount:", total);
 
         const options = {
-            amount: total * 100,
+            amount: Math.round(total*100),
             currency: "INR",
             receipt: "order_" + Date.now(),
         };
 
         const order = await razorpay.orders.create(options);
-
+        console.log("created order:",order);
         res.json(order);
 
     } catch (err) {
