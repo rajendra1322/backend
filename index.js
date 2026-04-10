@@ -10,9 +10,9 @@ import Razorpay from 'razorpay';
 import crypto from 'crypto';
 
 
-const app = express()
+const app = express();
 app.use(cors({
-    origin: "http://localhost:5173",
+    origin: "https://rajmart.vercel.app",
     credentials: true
 }));
 app.use(express.json());
