@@ -444,7 +444,7 @@ app.post("/ordersave", async (req, res) => {
             deliveryaddress
         })
         await neworder.save();
-        const user = await User.findById(id);
+        const user = await user.findById(id);
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
