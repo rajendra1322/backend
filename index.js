@@ -519,25 +519,25 @@ app.post("/verify-razorpay", async (req, res) => {
       deliveryaddress
     } = req.body;
 
-    console.log("STEP 1: API HIT");
+    
 
-    // ✅ TEMP: Skip signature check (since already tested)
-    console.log("STEP 2: Skipping signature");
+    
+    
 
-    // ✅ SAFE PRODUCT HANDLING
+    
     const fullproducts = await Promise.all(
       products.map(async (item) => {
         const id = item.productId || item._id;
 
         if (!id) {
-          console.log("❌ Missing ID:", item);
+          console.log(" Missing ID:", item);
           return null;
         }
 
         const productdata = await product.findById(id);
 
         if (!productdata) {
-          console.log("❌ Product not found:", id);
+          console.log(" Product not found:", id);
           return null;
         }
 
@@ -554,7 +554,7 @@ app.post("/verify-razorpay", async (req, res) => {
 
     const validproduct = fullproducts.filter(p => p != null);
 
-    console.log("STEP 3: Products OK");
+    
 
     const totalamount = validproduct.reduce((sum, item) => {
       return sum + (item.quantity * item.price);
@@ -584,12 +584,12 @@ app.post("/verify-razorpay", async (req, res) => {
 
     await neworder.save();
 
-    console.log("✅ STEP 5: ORDER SAVED");
+    
 
     return res.json({ success: true });
 
   } catch (err) {
-    console.log("❌ ERROR IN VERIFY:", err);
+    console.log(" ERROR IN VERIFY:", err);
     return res.json({ success: false, error: err.message });
   }
 });
