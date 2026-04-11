@@ -453,9 +453,9 @@ app.post("/ordersave", async (req, res) => {
         return res.json({ message: "Order saved successfully and email sent " });
     }
     catch (err) {
-        console.log(err);
-    }
-
+    console.log("ORDER ERROR:", err);
+    return res.status(500).json({ message: "Order not saved", error: err.message });
+}
 })
 
 const razorpay = new Razorpay({
