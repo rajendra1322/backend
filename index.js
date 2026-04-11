@@ -13,9 +13,9 @@ import crypto from 'crypto';
 
 const app = express();
 const allowedOrigins = [
-  "http://localhost:5173",
-  "https://rajmart.vercel.app",
-  "https://*.vercel.app"
+    "http://localhost:5173",
+    "https://rajmart.vercel.app",
+    "https://*.vercel.app"
 ];
 
 app.use(cors({
@@ -401,7 +401,7 @@ const orderschema = mongoose.Schema({
     },
 
 
-},{ timestamps: true });
+}, { timestamps: true });
 
 
 
@@ -444,7 +444,13 @@ app.post("/ordersave", async (req, res) => {
             deliveryaddress
         })
         await neworder.save();
-        return res.json({ message: "Order saved successfully" });
+        const user = await User.findById(id);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        await SendConfirmation(user.mail, neworder)
+        return res.json({ message: "Order saved successfully and email sent " });
     }
     catch (err) {
         console.log(err);
@@ -494,13 +500,13 @@ app.post("/razorpayorder", async (req, res) => {
         console.log("Total Amount:", total);
 
         const options = {
-            amount: Math.round(total*100),
+            amount: Math.round(total * 100),
             currency: "INR",
             receipt: "order_" + Date.now(),
         };
 
         const order = await razorpay.orders.create(options);
-        console.log("created order:",order);
+        console.log("created order:", order);
         res.json(order);
 
     } catch (err) {
@@ -510,89 +516,89 @@ app.post("/razorpayorder", async (req, res) => {
 });
 
 app.post("/verify-razorpay", async (req, res) => {
-  try {
-    const {
-      razorpay_order_id,
-      razorpay_payment_id,
-      razorpay_signature,
-      products,
-      users,
-      deliveryaddress
-    } = req.body;
+    try {
+        const {
+            razorpay_order_id,
+            razorpay_payment_id,
+            razorpay_signature,
+            products,
+            users,
+            deliveryaddress
+        } = req.body;
 
-    
 
-    
-    
 
-    
-    const fullproducts = await Promise.all(
-      products.map(async (item) => {
-        const id = item.productId || item._id;
 
-        if (!id) {
-          console.log(" Missing ID:", item);
-          return null;
-        }
 
-        const productdata = await product.findById(id);
 
-        if (!productdata) {
-          console.log(" Product not found:", id);
-          return null;
-        }
 
-        return {
-          id: productdata.id,
-          name: productdata.name,
-          price: productdata.price,
-          image: productdata.image,
-          category: productdata.category,
-          quantity: item.quantity
-        };
-      })
-    );
+        const fullproducts = await Promise.all(
+            products.map(async (item) => {
+                const id = item.productId || item._id;
 
-    const validproduct = fullproducts.filter(p => p != null);
+                if (!id) {
+                    console.log(" Missing ID:", item);
+                    return null;
+                }
 
-    
+                const productdata = await product.findById(id);
 
-    const totalamount = validproduct.reduce((sum, item) => {
-      return sum + (item.quantity * item.price);
-    }, 0);
+                if (!productdata) {
+                    console.log(" Product not found:", id);
+                    return null;
+                }
 
-    const usersArray = Array.isArray(users) ? users : [users];
+                return {
+                    id: productdata.id,
+                    name: productdata.name,
+                    price: productdata.price,
+                    image: productdata.image,
+                    category: productdata.category,
+                    quantity: item.quantity
+                };
+            })
+        );
 
-    const formattedUsers = usersArray.map(user => ({
-      id: user._id || user.id,
-      usermail: user.email,
-      phone: user.number
-    }));
+        const validproduct = fullproducts.filter(p => p != null);
 
-    console.log("STEP 4: Users OK");
 
-    const neworder = new order({
-      products: validproduct,
-      users: formattedUsers,
-      deliveryaddress,
-      totalamount,
-      paymentType: "Online (Razorpay)",
-      razorpay_order_id,
-      razorpay_payment_id,
-      razorpay_signature,
-      paymentStatus: "success"
-    });
 
-    await neworder.save();
+        const totalamount = validproduct.reduce((sum, item) => {
+            return sum + (item.quantity * item.price);
+        }, 0);
 
-    
+        const usersArray = Array.isArray(users) ? users : [users];
 
-    return res.json({ success: true });
+        const formattedUsers = usersArray.map(user => ({
+            id: user._id || user.id,
+            usermail: user.email,
+            phone: user.number
+        }));
 
-  } catch (err) {
-    console.log(" ERROR IN VERIFY:", err);
-    return res.json({ success: false, error: err.message });
-  }
+        console.log("STEP 4: Users OK");
+
+        const neworder = new order({
+            products: validproduct,
+            users: formattedUsers,
+            deliveryaddress,
+            totalamount,
+            paymentType: "Online (Razorpay)",
+            razorpay_order_id,
+            razorpay_payment_id,
+            razorpay_signature,
+            paymentStatus: "success"
+        });
+
+        await neworder.save();
+
+
+
+        return res.json({ success: true });
+
+    } catch (err) {
+        console.log(" ERROR IN VERIFY:", err);
+        return res.json({ success: false, error: err.message });
+    }
 });
 app.get("/getorder", async (req, res) => {
     try {

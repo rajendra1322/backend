@@ -23,6 +23,48 @@ export const SendVerification = async (toEmail, otp) => {
     console.error("Email sending error:", err.response?.body || err.message);
   }
 };
+
+export const SendConfirmation = async (toEmail, order) => {
+  try {
+    const productList = order.products
+      .map(
+        (p) => `<li>${p.name} - Qty: ${p.quantity} - ₹${p.price}</li>`
+      )
+      .join("");
+
+    const sendSmtpEmail = {
+      to: [{ email: toEmail }],
+      sender: {
+        email: process.env.FROM_EMAIL,
+        name: process.env.FROM_NAME,
+      },
+      subject: "🛒 Order Confirmed (Cash on Delivery)",
+      htmlContent: `
+        <h2>Order Confirmed ✅</h2>
+        <p>Hi, your order has been placed successfully.</p>
+
+        <h3>Order Details:</h3>
+        <ul>
+          ${productList}
+        </ul>
+
+        <p><b>Total Amount:</b> ₹${order.totalAmount}</p>
+        <p><b>Payment Method:</b> Cash on Delivery</p>
+        <p><b>Status:</b> ${order.status}</p>
+
+        <br/>
+        <p>Your order will be delivered soon 🚚</p>
+      `,
+      textContent: `Order confirmed. Total: ₹${order.totalAmount}`,
+    };
+
+    const response = await tranEmailApi.sendTransacEmail(sendSmtpEmail);
+    console.log("Order email sent:", response);
+
+  } catch (err) {
+    console.error("Order email error:", err.response?.body || err.message);
+  }
+};
 // import nodemailer from "nodemailer";
 // import dotenv from "dotenv";
 
