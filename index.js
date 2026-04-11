@@ -443,7 +443,6 @@ app.post("/ordersave", async (req, res) => {
             deliveryaddress
         })
         await neworder.save();
-        SendConfirmation(usermail,totalamount);
         return res.json({ message: "Order saved successfully" });
     }
     catch (err) {
