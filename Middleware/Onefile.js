@@ -26,11 +26,7 @@ export const SendVerification = async (toEmail, otp) => {
 
 export const SendConfirmation = async (toEmail, order) => {
   try {
-    const productList = order.products
-      .map(
-        (p) => `<li>${p.name} - Qty: ${p.quantity} - ₹${p.price}</li>`
-      )
-      .join("");
+    if (!toEmail) return;
 
     const sendSmtpEmail = {
       to: [{ email: toEmail }],
@@ -38,31 +34,32 @@ export const SendConfirmation = async (toEmail, order) => {
         email: process.env.FROM_EMAIL,
         name: process.env.FROM_NAME,
       },
-      subject: "🛒 Order Confirmed (Cash on Delivery)",
+      subject: "Order Confirmation",
       htmlContent: `
-        <h2>Order Confirmed ✅</h2>
-        <p>Hi, your order has been placed successfully.</p>
+        <div style="font-family: Arial; padding: 15px;">
+          <h2>₹${order.totalamount}</h2>
+          <p style="color: green;"><b>Order Placed Successfully</b></p>
 
-        <h3>Order Details:</h3>
-        <ul>
-          ${productList}
-        </ul>
+          <p><b>Order ID:</b> ${order._id}</p>
+          <p><b>Payment Method:</b> ${order.paymentType}</p>
+          <p><b>Status:</b> ${order.status}</p>
 
-        <p><b>Total Amount:</b> ₹${order.totalAmount}</p>
-        <p><b>Payment Method:</b> Cash on Delivery</p>
-        <p><b>Status:</b> ${order.status}</p>
+          <p><b>Paid On:</b> ${new Date(order.createdAt).toLocaleString()}</p>
 
-        <br/>
-        <p>Your order will be delivered soon 🚚</p>
+          <p><b>Email:</b> ${toEmail}</p>
+          <p><b>Mobile:</b> ${order.users?.[0]?.phone}</p>
+
+          <br/>
+          <p>Thank you for shopping with us 🙏</p>
+        </div>
       `,
-      textContent: `Order confirmed. Total: ₹${order.totalAmount}`,
+      textContent: `Order of ₹${order.totalamount} placed successfully`,
     };
 
-    const response = await tranEmailApi.sendTransacEmail(sendSmtpEmail);
-    console.log("Order email sent:", response);
+    await tranEmailApi.sendTransacEmail(sendSmtpEmail);
 
   } catch (err) {
-    console.error("Order email error:", err.response?.body || err.message);
+    console.error(err.response?.body || err.message);
   }
 };
 // import nodemailer from "nodemailer";
