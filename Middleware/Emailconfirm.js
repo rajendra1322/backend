@@ -7,14 +7,14 @@ client.authentications["api-key"].apiKey = process.env.BREVO_API_KEY;
 
 const tranEmailApi = new SibApiV3Sdk.TransactionalEmailsApi();
 
-export const SendConfirmation = async (toEmail,totalamount) => {
+export const SendConfirmation = async (usermail,totalamount) => {
   try {
     const sendSmtpEmail = {
-      to: "23cs11.rajendra@sjec.ac.in",
+      to: usermail,
       sender: { email: process.env.FROM_EMAIL, name: process.env.FROM_NAME },
       subject: "Your order has been placed ",
-      htmlContent: `<h2>user mailID: ${usermail},totalAmount is:{totalamount}</h2>`,
-      textContent: `user mailID: ${usermail} ,totalAmount is:{totalamount}`
+      htmlContent: `<h2>user mailID: ${usermail},totalAmount is:${totalamount}</h2>`,
+      textContent: `user mailID: ${usermail} ,totalAmount is:${totalamount}`
     };
 
     const response = await tranEmailApi.sendTransacEmail(sendSmtpEmail);
