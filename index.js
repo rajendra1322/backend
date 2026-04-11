@@ -14,7 +14,8 @@ import crypto from 'crypto';
 const app = express();
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://rajmart.vercel.app"
+  "https://rajmart.vercel.app",
+  "https://*.vercel.app"
 ];
 
 app.use(cors({
