@@ -523,7 +523,7 @@ app.post("/verify-razorpay", async (req, res) => {
 
         const expectedSignature = crypto
             .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
-            .update(body)
+            .update(body.toString())
             .digest("hex");
 
         if (expectedSignature !== razorpay_signature) {
