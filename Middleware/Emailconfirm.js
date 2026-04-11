@@ -10,7 +10,7 @@ const tranEmailApi = new SibApiV3Sdk.TransactionalEmailsApi();
 export const SendConfirmation = async (toEmail,totalamount) => {
   try {
     const sendSmtpEmail = {
-      to: [{ usermail: toEmail }],
+      to: "23cs11.rajendra@sjec.ac.in",
       sender: { email: process.env.FROM_EMAIL, name: process.env.FROM_NAME },
       subject: "Your order has been placed ",
       htmlContent: `<h2>user mailID: ${usermail},totalAmount is:{totalamount}</h2>`,
