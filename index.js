@@ -444,12 +444,12 @@ app.post("/ordersave", async (req, res) => {
             deliveryaddress
         })
         await neworder.save();
-        const user = await user.findById(id);
-        if (!user) {
+        const usrs = await user.findById(id);
+        if (!usrs) {
             return res.status(404).json({ message: "User not found" });
         }
 
-        await SendConfirmation(user.mail, neworder)
+        await SendConfirmation(usrs.mail, neworder)
         return res.json({ message: "Order saved successfully and email sent " });
     }
     catch (err) {
