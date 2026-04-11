@@ -520,7 +520,7 @@ app.post("/verify-razorpay", async (req, res) => {
         } = req.body;
 
         const body = razorpay_order_id + "|" + razorpay_payment_id;
-
+        console.log("Incoming products:", products);
         const expectedSignature = crypto
             .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
             .update(body.toString())
@@ -531,7 +531,7 @@ app.post("/verify-razorpay", async (req, res) => {
                 paymentStatus: "failed",
                 razorpay_order_id,
             });
-            return res.status(400).json({ success: false });
+            return res.json({ success: false });
         }
 
 
@@ -577,7 +577,8 @@ app.post("/verify-razorpay", async (req, res) => {
             razorpay_signature,
             paymentStatus: "success"
         });
-
+        console.log("Expected:", expectedSignature);
+        console.log("Received:", razorpay_signature);
         await neworder.save();
 
         res.json({ success: true });
