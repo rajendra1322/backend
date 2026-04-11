@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import mongoose from 'mongoose';
 import { SendVerification } from './Middleware/Onefile.js';
-import { SendConfirmation } from './Middleware/Emailconfirm.js';
+import { SendConfirmation } from './Middleware/Onefile.js';
 import dotenv from "dotenv";
 import multer, { MulterError } from 'multer';
 import { v2 as cloudinary } from 'cloudinary';
