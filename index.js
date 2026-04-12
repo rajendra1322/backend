@@ -683,11 +683,7 @@ app.get("/myorders", verifyToken, async (req, res) => {
     }
 });
 
-await axios.post("/save-address", {
-  lat: location.lat,
-  lng: location.lng,
-  address: addressText,
-});
+
 const port = process.env.PORT || 5000;
 
 app.listen(port, () => {
