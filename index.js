@@ -9,6 +9,7 @@ import { v2 as cloudinary } from 'cloudinary';
 import streamifier from 'streamifier';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
 
 
 const app = express();
@@ -58,12 +59,31 @@ const userSchema = mongoose.Schema({
 
 const user = mongoose.model("user", userSchema);
 
+const verifyToken = (req, res, next) => {
+    try {
+        const authHeader = req.headers.authorization;
 
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+            return res.status(401).json({ message: "No token provided" });
+        }
+
+        const token = authHeader.split(" ")[1];
+
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+        req.userId = decoded.userId;
+
+        next();
+    } catch (err) {
+        return res.status(401).json({ message: "Invalid token" });
+    }
+};
 
 app.post("/signin", async (req, res) => {
     console.log("signin api hit...");
     try {
         const { number, email } = req.body;
+        const cleanEmail = email.toLowerCase();
 
         console.log("Request:", req.body);
 
@@ -71,7 +91,7 @@ app.post("/signin", async (req, res) => {
             return res.json({ message: "Invalid number" });
         }
 
-        let existingUser = await user.findOne({ email });
+        let existingUser = await user.findOne({ email: cleanEmail });
 
         const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
 
@@ -86,13 +106,13 @@ app.post("/signin", async (req, res) => {
 
             const newUser = new user({
                 number,
-                email: email.toLowerCase(),
+                email: cleanEmail,
                 verificationCode,
             });
 
             await newUser.save();
         }
-        await SendVerification(email, verificationCode);
+        await SendVerification(cleanEmail, verificationCode);
         return res.json({ message: "OTP sent successfully" });
 
     } catch (err) {
@@ -100,47 +120,57 @@ app.post("/signin", async (req, res) => {
         return res.status(500).json({ message: "Server error" });
     }
 });
-app.get("/getuser", async (req, res) => {
-    const femail = await user.find();
-    if (!femail) {
-        res.json({ message: "please signin first..." })
+app.get("/getuser", verifyToken, async (req, res) => {
+    try {
+        const u = await user.findById(req.userId);
+
+        if (!u) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.json(u);
+
+    } catch (err) {
+        res.status(500).json({ message: "Error fetching user" });
     }
-    res.json(femail);
-})
+});
 
 app.post("/verifyOTP", async (req, res) => {
-    const { otp, email } = req.body;
+    try {
+        const { otp, email } = req.body;
 
-    if (!email || !otp) {
-        return res.status(400).json({
-            message: "Email and OTP are required"
+        if (!email || !otp) {
+            return res.status(400).json({ message: "Email and OTP are required" });
+        }
+
+        const cleanEmail = email.toLowerCase();
+
+        const existingUser = await user.findOne({ email: cleanEmail });
+
+        if (!existingUser) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        if (String(existingUser.verificationCode) !== String(otp)) {
+            return res.status(400).json({ message: "Invalid OTP" });
+        }
+
+        const token = jwt.sign(
+            { userId: existingUser._id },
+            process.env.JWT_SECRET,
+            { expiresIn: "7d" }
+        );
+
+        return res.json({
+            message: "Login successful",
+            token,
+            userId: existingUser._id
         });
+
+    } catch (err) {
+        return res.status(500).json({ message: "Server error" });
     }
-
-    const existingUser = await user.findOne({
-        email: email.toLowerCase()
-
-    });
-
-    if (!existingUser) {
-        return res.json({ message: "User not found" });
-    }
-    console.log("DB OTP:", existingUser.verificationCode);
-    console.log("Entered OTP:", otp);
-    console.log(email);
-    if (String(existingUser.verificationCode) === String(otp)) {
-        console.log(existingUser.verificationCode);
-        console.log(otp);
-        return res.json({ message: "login sucessfullly.." });
-    }
-    else {
-        return res.json({ message: "Invalid OTP.." });
-
-    }
-
-
-
-})
+});
 
 const productSchema = mongoose.Schema({
     name: {
@@ -406,15 +436,19 @@ const orderschema = mongoose.Schema({
 
 
 const order = mongoose.model("order", orderschema);
-app.post("/ordersave", async (req, res) => {
+app.post("/ordersave", verifyToken, async (req, res) => {
     try {
-        const { products, users, paymentType, deliveryaddress } = req.body;
-        const usersArray = Array.isArray(users) ? users : [users];
-        const formateduser = usersArray.map(user => ({
-            id: user._id || user.id,
-            usermail: user.email,
-            phone: user.number,
-        }))
+        const { products, paymentType, deliveryaddress } = req.body;
+        const dbUser = await user.findById(req.userId);
+        if (!dbUser) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        const formateduser = [{
+            id: dbUser._id,
+            usermail: dbUser.email,
+            phone: dbUser.number,
+        }];
         const fullproducts = await Promise.all(
             products.map(async (item) => {
                 const productdata = await product.findById(item.productId);
@@ -423,7 +457,7 @@ app.post("/ordersave", async (req, res) => {
 
                 }
                 return {
-                    id: productdata.id,
+                    id: productdata._id,
                     name: productdata.name,
                     price: productdata.price,
                     image: productdata.image,
@@ -453,9 +487,9 @@ app.post("/ordersave", async (req, res) => {
         return res.json({ message: "Order saved successfully" });
     }
     catch (err) {
-    console.log("ORDER ERROR:", err);
-    return res.status(500).json({ message: "Order not saved", error: err.message });
-}
+        console.log("ORDER ERROR:", err);
+        return res.status(500).json({ message: "Order not saved", error: err.message });
+    }
 })
 
 const razorpay = new Razorpay({
@@ -463,7 +497,7 @@ const razorpay = new Razorpay({
     key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
-app.post("/razorpayorder", async (req, res) => {
+app.post("/razorpayorder", verifyToken, async (req, res) => {
     try {
         const { products } = req.body;
 
@@ -515,22 +549,20 @@ app.post("/razorpayorder", async (req, res) => {
     }
 });
 
-app.post("/verify-razorpay", async (req, res) => {
+app.post("/verify-razorpay", verifyToken, async (req, res) => {
     try {
         const {
             razorpay_order_id,
             razorpay_payment_id,
             razorpay_signature,
             products,
-            users,
             deliveryaddress
         } = req.body;
 
-
-
-
-
-
+        const dbUser = await user.findById(req.userId);
+        if (!dbUser) {
+            return res.status(404).json({ message: "User not found" });
+        }
 
         const fullproducts = await Promise.all(
             products.map(async (item) => {
@@ -569,11 +601,11 @@ app.post("/verify-razorpay", async (req, res) => {
 
         const usersArray = Array.isArray(users) ? users : [users];
 
-        const formattedUsers = usersArray.map(user => ({
-            id: user._id || user.id,
-            usermail: user.email,
-            phone: user.number
-        }));
+        const formattedUsers = [{
+            id: dbUser._id,
+            usermail: dbUser.email,
+            phone: dbUser.number
+        }];
 
         console.log("STEP 4: Users OK");
 
@@ -600,7 +632,7 @@ app.post("/verify-razorpay", async (req, res) => {
         return res.json({ success: false, error: err.message });
     }
 });
-app.get("/getorder", async (req, res) => {
+app.get("/getorder", verifyToken, async (req, res) => {
     try {
         const details = await order.find();
         if (!details || details.length === 0) {
@@ -635,10 +667,10 @@ app.get("/status/orders", async (req, res) => {
     res.json(orders);
 });
 
-app.get("/myorders/:userId", async (req, res) => {
+app.get("/myorders", verifyToken, async (req, res) => {
     try {
         const orders = await order.find({
-            "users.id": req.params.userId
+            "users.id": req.userId
         }).sort({ createdAt: -1 });
 
         res.json(orders);

@@ -9,8 +9,9 @@ const tranEmailApi = new SibApiV3Sdk.TransactionalEmailsApi();
 
 export const SendVerification = async (toEmail, otp) => {
   try {
+    const cleanEmail = toEmail.toLowerCase();
     const sendSmtpEmail = {
-      to: [{ email: toEmail }],
+      to: [{ email: cleanEmail }],
       sender: { email: process.env.FROM_EMAIL, name: process.env.FROM_NAME },
       subject: "Your OTP Code",
       htmlContent: `<h2>Your OTP is: ${otp}</h2>`,
