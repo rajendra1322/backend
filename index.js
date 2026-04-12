@@ -140,7 +140,7 @@ app.post("/verifyOTP", async (req, res) => {
         const { otp, email } = req.body;
 
         if (!email || !otp) {
-            return res.status(400).json({ message: "Email and OTP are required" });
+            return res.status(400).json({ message: "Email and OTP required" });
         }
 
         const cleanEmail = email.toLowerCase();
@@ -149,6 +149,10 @@ app.post("/verifyOTP", async (req, res) => {
 
         if (!existingUser) {
             return res.status(404).json({ message: "User not found" });
+        }
+
+        if (!existingUser.verificationCode) {
+            return res.status(400).json({ message: "OTP not generated" });
         }
 
         if (String(existingUser.verificationCode) !== String(otp)) {
@@ -168,6 +172,7 @@ app.post("/verifyOTP", async (req, res) => {
         });
 
     } catch (err) {
+        console.log("OTP ERROR:", err);
         return res.status(500).json({ message: "Server error" });
     }
 });
