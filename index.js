@@ -450,7 +450,7 @@ app.post("/ordersave", async (req, res) => {
         }
 
         await SendConfirmation(userEmail, neworder)
-        return res.json({ message: "Order saved successfully and email sent " });
+        return res.json({ message: "Order saved successfully" });
     }
     catch (err) {
     console.log("ORDER ERROR:", err);
