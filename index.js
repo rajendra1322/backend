@@ -682,6 +682,12 @@ app.get("/myorders", verifyToken, async (req, res) => {
         res.status(500).json({ message: "Error fetching orders" });
     }
 });
+
+await axios.post("/save-address", {
+  lat: location.lat,
+  lng: location.lng,
+  address: addressText,
+});
 const port = process.env.PORT || 5000;
 
 app.listen(port, () => {
