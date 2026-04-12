@@ -604,7 +604,6 @@ app.post("/verify-razorpay", verifyToken, async (req, res) => {
             return sum + (item.quantity * item.price);
         }, 0);
 
-        const usersArray = Array.isArray(users) ? users : [users];
 
         const formattedUsers = [{
             id: dbUser._id,
