@@ -112,7 +112,7 @@ const generateModernInvoice = (order) => {
 
       // ===== GRAND TOTAL BOX =====
       doc
-        .rect(350, summaryY + 70, 200, 30)
+        .rect(360, summaryY + 70, 250, 30)
         .fill(primary);
 
       doc
@@ -125,7 +125,7 @@ const generateModernInvoice = (order) => {
       doc
         .fillColor("gray")
         .fontSize(10)
-        .text("Thank you for shopping with Rajmart!", 50, 550, {
+        .text("Thank you for shopping with Rajmart!", 50, 650, {
           align: "center",
           width: 500,
         });
