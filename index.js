@@ -741,6 +741,30 @@ app.get("/admin/stats", async (req, res) => {
     }
 });
 
+
+app.get("/admin/revenue-chart", async (req, res) => {
+  const orders = await order.find();
+
+  const monthlyData = {};
+
+  orders.forEach(item => {
+    const month = new Date(item.createdAt).toLocaleString("default", { month: "short" });
+
+    if (!monthlyData[month]) {
+      monthlyData[month] = 0;
+    }
+
+    monthlyData[month] += Number(item.totalamount || 0);
+  });
+
+  const result = Object.keys(monthlyData).map(month => ({
+    month,
+    revenue: monthlyData[month]
+  }));
+
+  res.json(result);
+});
+
 const port = process.env.PORT || 5000;
 
 app.listen(port, () => {
