@@ -1,4 +1,5 @@
 import SibApiV3Sdk from "sib-api-v3-sdk";
+import fs from 'fs';
 import dotenv from "dotenv";
 dotenv.config();
 
