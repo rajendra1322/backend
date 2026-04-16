@@ -718,24 +718,27 @@ app.get("/myorders", verifyToken, async (req, res) => {
     }
 });
 
-// Example routes
+
 
 app.get("/admin/stats", async (req, res) => {
-  try {
-    const totalUsers = await user.countDocuments();
-    const totalProducts = await product.countDocuments();
+    try {
+        const totalUsers = await user.countDocuments();
+        const totalProducts = await product.countDocuments();
 
-    const orders = await order.find();
-    const totalRevenue = orders.reduce((acc, item) => acc + item.amount, 0);
+        const orders = await order.find();
+        console.log(orders);
+        const totalRevenue = orders.reduce((acc, item) => {
+            return acc + Number(item.amount || 0);
+        }, 0);
 
-    res.json({
-      totalUsers,
-      totalProducts,
-      totalRevenue
-    });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
+        res.json({
+            totalUsers,
+            totalProducts,
+            totalRevenue
+        });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
 });
 
 const port = process.env.PORT || 5000;
