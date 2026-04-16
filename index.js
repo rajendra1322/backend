@@ -490,10 +490,26 @@ app.post("/ordersave", verifyToken, async (req, res) => {
         if (!userEmail) {
             return res.status(404).json({ message: "User not found" });
         }
-        const pdfBuffer = await generateModernInvoice(neworder);
+        let pdfBuffer = null;
+        try {
+            pdfBuffer = await generateModernInvoice(neworder);
+            console.log("PDF Size:", pdfBuffer?.length);
+        } catch (pdfErr) {
+            console.error("PDF Generation Failed ❌:", pdfErr.message);
+        }
 
-        await SendConfirmation(userEmail, neworder, pdfBuffer);
-        return res.json({ message: "Order saved successfully" });
+        // ✅ Send email safely (DO NOT break order if email fails)
+        if (userEmail && pdfBuffer && pdfBuffer.length > 0) {
+            try {
+                await SendConfirmation(userEmail, neworder, pdfBuffer);
+                console.log("Email sent successfully ✅");
+            } catch (mailErr) {
+                console.error("Email sending failed ❌:", mailErr.message);
+            }
+        } else {
+            console.log("Skipping email (missing email or PDF)");
+        }
+
     }
     catch (err) {
         console.log("ORDER ERROR:", err);

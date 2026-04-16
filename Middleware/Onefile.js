@@ -26,10 +26,22 @@ export const SendVerification = async (toEmail, otp) => {
   }
 };
 
-export const SendConfirmation = async (toEmail, order,pdfBuffer) => {
+export const SendConfirmation = async (toEmail, order, pdfBuffer) => {
   try {
-    if (!toEmail) return;
-    const fileContent = pdfBuffer.toString("base64");
+    if (!toEmail) {
+      console.log("No email provided");
+      return;
+    }
+
+    if (!pdfBuffer || pdfBuffer.length === 0) {
+      console.log("PDF buffer is empty ❌");
+      return;
+    }
+
+    console.log("PDF Size:", pdfBuffer.length);
+
+    // Ensure proper base64 encoding
+    const fileContent = Buffer.from(pdfBuffer).toString("base64");
 
     const sendSmtpEmail = {
       to: [{ email: toEmail }],
@@ -38,6 +50,7 @@ export const SendConfirmation = async (toEmail, order,pdfBuffer) => {
         name: process.env.FROM_NAME,
       },
       subject: "Order Confirmation",
+
       htmlContent: `
         <div style="font-family: Arial; padding: 15px;">
           <h2>₹${order.totalamount}</h2>
@@ -50,27 +63,30 @@ export const SendConfirmation = async (toEmail, order,pdfBuffer) => {
           <p><b>Paid On:</b> ${new Date(order.createdAt).toLocaleString()}</p>
 
           <p><b>Email:</b> ${toEmail}</p>
-          <p><b>Mobile:</b> ${order.users?.[0]?.phone}</p>
+          <p><b>Mobile:</b> ${order.users?.[0]?.phone || "N/A"}</p>
 
           <br/>
           <p>Thank you for shopping with us 🙏</p>
         </div>
       `,
+
       textContent: `Order of ₹${order.totalamount} placed successfully`,
 
-       attachments: [
-  {
-    name: "invoice.pdf",
-    content: fileContent,
-    contentType: "application/pdf",
-  },
-],
+      // ✅ Correct attachment format
+      attachment: [
+        {
+          name: "invoice.pdf",
+          content: fileContent,
+          contentType: "application/pdf",
+        },
+      ],
     };
-   
 
-    await tranEmailApi.sendTransacEmail(sendSmtpEmail);
+    const response = await tranEmailApi.sendTransacEmail(sendSmtpEmail);
+
+    console.log("Email sent successfully ✅", response);
 
   } catch (err) {
-    console.error(err.response?.body || err.message);
+    console.error("Email Error ❌:", err.response?.body || err.message);
   }
 };
