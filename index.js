@@ -495,20 +495,22 @@ app.post("/ordersave", verifyToken, async (req, res) => {
             pdfBuffer = await generateModernInvoice(neworder);
             console.log("PDF Size:", pdfBuffer?.length);
         } catch (pdfErr) {
-            console.error("PDF Generation Failed ❌:", pdfErr.message);
+            console.error("PDF Generation Failed :", pdfErr.message);
         }
 
-        // ✅ Send email safely (DO NOT break order if email fails)
+        
         if (userEmail && pdfBuffer && pdfBuffer.length > 0) {
             try {
                 await SendConfirmation(userEmail, neworder, pdfBuffer);
-                console.log("Email sent successfully ✅");
+                console.log("Email sent successfully ");
             } catch (mailErr) {
-                console.error("Email sending failed ❌:", mailErr.message);
+                console.error("Email sending failed :", mailErr.message);
             }
         } else {
             console.log("Skipping email (missing email or PDF)");
         }
+            return res.json({ message: "Order saved successfully" });
+
 
     }
     catch (err) {
