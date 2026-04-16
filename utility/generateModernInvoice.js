@@ -112,14 +112,14 @@ const generateModernInvoice = (order) => {
 
       // ===== GRAND TOTAL BOX =====
       doc
-        .rect(360, summaryY + 70, 250, 30)
+        .rect(350, summaryY + 70, 250, 30)
         .fill(primary);
 
       doc
         .fillColor("white")
         .font("Helvetica-Bold")
         .text("Grand Total", 360, summaryY + 78)
-        .text(formatCurrency(grandTotal), 400, summaryY + 78, { align: "right" });
+        .text(formatCurrency(grandTotal), 350, summaryY + 78, { align: "right" });
 
       // ===== FOOTER =====
       doc
