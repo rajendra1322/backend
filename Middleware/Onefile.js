@@ -25,9 +25,10 @@ export const SendVerification = async (toEmail, otp) => {
   }
 };
 
-export const SendConfirmation = async (toEmail, order) => {
+export const SendConfirmation = async (toEmail, order,filePath) => {
   try {
     if (!toEmail) return;
+    const fileContent = fs.readFileSync(filePath).toString("base64");
 
     const sendSmtpEmail = {
       to: [{ email: toEmail }],
@@ -55,7 +56,15 @@ export const SendConfirmation = async (toEmail, order) => {
         </div>
       `,
       textContent: `Order of ₹${order.totalamount} placed successfully`,
+
+       attachments: [
+        {
+          name: "invoice.pdf",
+          content: fileContent,
+        },
+      ],
     };
+   
 
     await tranEmailApi.sendTransacEmail(sendSmtpEmail);
 
@@ -63,53 +72,3 @@ export const SendConfirmation = async (toEmail, order) => {
     console.error(err.response?.body || err.message);
   }
 };
-// import nodemailer from "nodemailer";
-// import dotenv from "dotenv";
-
-// dotenv.config();
-
-// // create transporter
-// const transporter = nodemailer.createTransport({
-//   host: "smtp.gmail.com",
-//   port: 465,            
-//   secure: true, 
-//   auth: {
-//     user: process.env.EMAIL,
-//     pass: process.env.EMAIL_PASS,
-//   },
-//   family: 4,
-//   tls: {
-//     rejectUnauthorized: false,
-//   },
-// });
-
-// // check connection
-// transporter.verify((err, success) => {
-//   if (err) {
-//     console.log("SMTP error:", err);
-//   } else {
-//     console.log("SMTP ready");
-//   }
-// });
-
-// // function to send OTP
-// export const SendVerification = async (email, otp) => {
-//   console.log("Sending to:", email);
-//   console.log(process.env.EMAIL);
-//   console.log(process.env.EMAIL_PASS);
-
-//   try {
-//     const info = await transporter.sendMail({
-//       from: process.env.EMAIL,
-//       to: email, // dynamic email from req.body
-//       subject: "Verify using OTP",
-//       text: "Your OTP is: " + otp,
-//       html: `<h2>Your OTP is: ${otp}</h2>`,
-//     });
-
-//     console.log("Mail sent:", info);
-//   } catch (err) {
-//     console.log("Mail error:", err.message);
-//   }
-// };
-

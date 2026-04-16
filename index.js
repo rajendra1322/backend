@@ -3,6 +3,7 @@ import cors from 'cors';
 import mongoose from 'mongoose';
 import { SendVerification } from './Middleware/Onefile.js';
 import { SendConfirmation } from './Middleware/Onefile.js';
+import { generateModernInvoice} from './utility/generateModernInvoice.js'
 import dotenv from "dotenv";
 import multer, { MulterError } from 'multer';
 import { v2 as cloudinary } from 'cloudinary';
@@ -10,6 +11,7 @@ import streamifier from 'streamifier';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
+
 
 
 const app = express();
@@ -487,8 +489,12 @@ app.post("/ordersave", verifyToken, async (req, res) => {
         if (!userEmail) {
             return res.status(404).json({ message: "User not found" });
         }
+        const invoicePath = path.join(process.cwd(), `invoice_${neworder._id}.pdf`);
 
-        await SendConfirmation(userEmail, neworder)
+        await generateModernInvoice(neworder, invoicePath);
+
+
+        await SendConfirmation(userEmail, neworder,invoicePath)
         return res.json({ message: "Order saved successfully" });
     }
     catch (err) {
