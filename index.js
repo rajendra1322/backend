@@ -498,7 +498,7 @@ app.post("/ordersave", verifyToken, async (req, res) => {
             console.error("PDF Generation Failed :", pdfErr.message);
         }
 
-        
+
         if (userEmail && pdfBuffer && pdfBuffer.length > 0) {
             try {
                 await SendConfirmation(userEmail, neworder, pdfBuffer);
@@ -509,7 +509,7 @@ app.post("/ordersave", verifyToken, async (req, res) => {
         } else {
             console.log("Skipping email (missing email or PDF)");
         }
-            return res.json({ message: "Order saved successfully" });
+        return res.json({ message: "Order saved successfully" });
 
 
     }
@@ -648,9 +648,22 @@ app.post("/verify-razorpay", verifyToken, async (req, res) => {
         });
 
         await neworder.save();
+        let pdfBuffer = null;
+        try {
+            pdfBuffer = await generateModernInvoice(neworder);
+        } catch (err) {
+            console.log("PDF error:", err.message);
+        }
 
-
-
+        // Send email with invoice
+        if (dbUser.email && pdfBuffer) {
+            try {
+                await SendConfirmation(dbUser.email, neworder, pdfBuffer);
+                console.log("Email sent");
+            } catch (err) {
+                console.log("Email error:", err.message);
+            }
+        }
         return res.json({ success: true });
 
     } catch (err) {

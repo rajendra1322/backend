@@ -112,7 +112,7 @@ const generateModernInvoice = (order) => {
 
       // ===== GRAND TOTAL BOX =====
       doc
-        .rect(350, summaryY + 70, 250, 30)
+        .rect(350, summaryY + 70, 230, 30)
         .fill(primary);
 
       doc
