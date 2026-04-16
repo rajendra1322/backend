@@ -3,7 +3,7 @@ import cors from 'cors';
 import mongoose from 'mongoose';
 import { SendVerification } from './Middleware/Onefile.js';
 import { SendConfirmation } from './Middleware/Onefile.js';
-import { generateModernInvoice} from './utility/generateModernInvoice.js'
+import  generateModernInvoice from './utility/generateModernInvoice.js'
 import dotenv from "dotenv";
 import multer, { MulterError } from 'multer';
 import { v2 as cloudinary } from 'cloudinary';
