@@ -26,10 +26,10 @@ export const SendVerification = async (toEmail, otp) => {
   }
 };
 
-export const SendConfirmation = async (toEmail, order,filePath) => {
+export const SendConfirmation = async (toEmail, order,pdfBuffer) => {
   try {
     if (!toEmail) return;
-    const fileContent = fs.readFileSync(filePath).toString("base64");
+    const fileContent = pdfBuffer.toString("base64");
 
     const sendSmtpEmail = {
       to: [{ email: toEmail }],
@@ -59,11 +59,12 @@ export const SendConfirmation = async (toEmail, order,filePath) => {
       textContent: `Order of ₹${order.totalamount} placed successfully`,
 
        attachments: [
-        {
-          name: "invoice.pdf",
-          content: fileContent,
-        },
-      ],
+  {
+    name: "invoice.pdf",
+    content: fileContent,
+    contentType: "application/pdf",
+  },
+],
     };
    
 

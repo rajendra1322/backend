@@ -1,17 +1,21 @@
 import PDFDocument from "pdfkit";
-import fs from "fs";
 
-const generateModernInvoice = (order, filePath) => {
+const generateModernInvoice = (order) => {
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({ margin: 40 });
-    const stream = fs.createWriteStream(filePath);
 
-    doc.pipe(stream);
+    let buffers = [];
 
+    doc.on("data", buffers.push.bind(buffers));
+    doc.on("end", () => {
+      const pdfData = Buffer.concat(buffers);
+      resolve(pdfData);
+    });
+
+    // ===== YOUR SAME DESIGN =====
     const primary = "#1f5aa6";
     const gray = "#555";
 
-    // HEADER
     doc.fontSize(22).fillColor(primary).text("RAJMART", 50, 40);
     doc.fontSize(18).text("GST INVOICE", 400, 45);
 
@@ -24,7 +28,6 @@ const generateModernInvoice = (order, filePath) => {
 
     doc.moveTo(50, 110).lineTo(550, 110).lineWidth(3).strokeColor(primary).stroke();
 
-    // CUSTOMER
     doc.fontSize(12).fillColor("black").text("Billing To:", 50, 130);
 
     doc.font("Helvetica-Bold")
@@ -33,7 +36,6 @@ const generateModernInvoice = (order, filePath) => {
     doc.font("Helvetica")
       .text(`Phone: ${order.users[0].phone}`, 50, 165);
 
-    // TABLE HEADER
     const tableTop = 200;
 
     doc.rect(50, tableTop, 500, 25).fill(primary);
@@ -49,7 +51,6 @@ const generateModernInvoice = (order, filePath) => {
 
     doc.fillColor("black").font("Helvetica");
 
-    // PRODUCTS
     order.products.forEach((item) => {
       const itemTotal = item.price * item.quantity;
       subtotal += itemTotal;
@@ -62,7 +63,6 @@ const generateModernInvoice = (order, filePath) => {
       y += 25;
     });
 
-    // GST
     const cgst = subtotal * 0.09;
     const sgst = subtotal * 0.09;
     const grandTotal = subtotal + cgst + sgst;
@@ -85,9 +85,6 @@ const generateModernInvoice = (order, filePath) => {
       .text(`₹${grandTotal}`, 450, summaryY + 78);
 
     doc.end();
-
-    stream.on("finish", () => resolve(filePath));
-    stream.on("error", reject);
   });
 };
 
