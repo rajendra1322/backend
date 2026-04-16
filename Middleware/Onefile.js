@@ -34,13 +34,13 @@ export const SendConfirmation = async (toEmail, order, pdfBuffer) => {
     }
 
     if (!pdfBuffer || pdfBuffer.length === 0) {
-      console.log("PDF buffer is empty ❌");
+      console.log("PDF buffer is empty ");
       return;
     }
 
     console.log("PDF Size:", pdfBuffer.length);
 
-    // Ensure proper base64 encoding
+    
     const fileContent = Buffer.from(pdfBuffer).toString("base64");
 
     const sendSmtpEmail = {
@@ -72,7 +72,7 @@ export const SendConfirmation = async (toEmail, order, pdfBuffer) => {
 
       textContent: `Order of ₹${order.totalamount} placed successfully`,
 
-      // ✅ Correct attachment format
+      
       attachment: [
         {
           name: "invoice.pdf",
@@ -84,9 +84,9 @@ export const SendConfirmation = async (toEmail, order, pdfBuffer) => {
 
     const response = await tranEmailApi.sendTransacEmail(sendSmtpEmail);
 
-    console.log("Email sent successfully ✅", response);
+    console.log("Email sent successfully ", response);
 
   } catch (err) {
-    console.error("Email Error ❌:", err.response?.body || err.message);
+    console.error("Email Error :", err.response?.body || err.message);
   }
 };
