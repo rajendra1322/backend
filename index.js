@@ -728,7 +728,7 @@ app.get("/admin/stats", async (req, res) => {
         const orders = await order.find();
         console.log(orders);
         const totalRevenue = orders.reduce((acc, item) => {
-            return acc + Number(item.amount || 0);
+            return acc + Number(item.totalamount || 0);
         }, 0);
 
         res.json({
