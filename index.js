@@ -718,6 +718,25 @@ app.get("/myorders", verifyToken, async (req, res) => {
     }
 });
 
+// Example routes
+
+app.get("/admin/stats", async (req, res) => {
+  try {
+    const totalUsers = await user.countDocuments();
+    const totalProducts = await product.countDocuments();
+
+    const orders = await order.find();
+    const totalRevenue = orders.reduce((acc, item) => acc + item.amount, 0);
+
+    res.json({
+      totalUsers,
+      totalProducts,
+      totalRevenue
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
 
 const port = process.env.PORT || 5000;
 
