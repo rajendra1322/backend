@@ -33,7 +33,7 @@ const generateModernInvoice = (order) => {
 
       doc
         .text(`Invoice No: ${order._id}`, 400, 70)
-        .text(`Date: ${new Date().toLocaleDateString()}`, 400, 85);
+        .text(`Date: ${new Date().toLocaleDateString()}`, 400, 95);
 
       doc.moveTo(50, 110).lineTo(550, 110).stroke(primary);
 
@@ -119,13 +119,13 @@ const generateModernInvoice = (order) => {
         .fillColor("white")
         .font("Helvetica-Bold")
         .text("Grand Total", 360, summaryY + 78)
-        .text(formatCurrency(grandTotal), 450, summaryY + 78, { align: "right" });
+        .text(formatCurrency(grandTotal), 400, summaryY + 78, { align: "right" });
 
       // ===== FOOTER =====
       doc
         .fillColor("gray")
         .fontSize(10)
-        .text("Thank you for shopping with Rajmart!", 50, 750, {
+        .text("Thank you for shopping with Rajmart!", 50, 550, {
           align: "center",
           width: 500,
         });
