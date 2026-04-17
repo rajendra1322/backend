@@ -251,19 +251,28 @@ app.post("/addItems", upload.single("image"), async (req, res) => {
 
         try {
             const response = await groq.responses.create({
-                model: "llama-3.1-8b-instant", // ✅ UPDATED MODEL
+                model: "llama-3.1-8b-instant",
                 input: `
-    Write a short e-commerce product description.
+Write a clean product description in plain text.
 
-    Product: ${req.body.name}
-    Category: ${req.body.category}
-    Price: ₹${req.body.price}
+Rules:
+- Do NOT use markdown (**)
+- Do NOT use bullet points
+- Do NOT use special symbols
+- Use simple sentences (4–5 lines)
 
-    Make it attractive, 4-5 lines with bullet points.
-    `,
+Product: ${req.body.name}
+Category: ${req.body.category}
+Price: ₹${req.body.price}
+`,
             });
 
-            description = response.output_text || description;
+            description =
+                (response.output_text ||
+                    response.output?.[0]?.content?.[0]?.text ||
+                    description)
+                    .replace(/\*\*/g, "")   // remove bold
+                    .replace(/\n/g, " ");   // remove line breaks
 
         } catch (err) {
             console.log("Groq error:", err);
