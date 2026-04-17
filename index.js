@@ -227,7 +227,7 @@ const groq = new OpenAI({
     apiKey: process.env.GROQ_API_KEY,
     baseURL: "https://api.groq.com/openai/v1",
 });
-var streamUpload = (reqFile) => {
+const streamUpload = (reqFile) => {
     return new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
             { folder: "products" },
@@ -336,15 +336,7 @@ app.post("/getproductbyId", async (req, res) => {
     }
 })
 
-const streamUpload = (fileBuffer) => {
-    return new Promise((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream((error, result) => {
-            if (result) resolve(result);
-            else reject(error);
-        });
-        streamifier.createReadStream(fileBuffer).pipe(stream);
-    });
-};
+
 
 app.put("/updateItems/:id", upload.single("image"), async (req, res) => {
     try {
