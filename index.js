@@ -12,6 +12,7 @@ import streamifier from 'streamifier';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
+import OpenAI from 'openai';
 
 
 
@@ -205,7 +206,8 @@ const productSchema = mongoose.Schema({
         type: String,
         unique: false,
         required: true,
-    }
+    },
+    description: { String }
 });
 const product = mongoose.model("product", productSchema);
 
@@ -213,6 +215,10 @@ const product = mongoose.model("product", productSchema);
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
+const grok = new OpenAI({
+    apiKey: process.env.GROK_API_KEY,
+    baseURL: "https://api.x.ai/v1",
+});
 
 app.post("/addItems", upload.single("image"), async (req, res) => {
     try {
@@ -233,16 +239,46 @@ app.post("/addItems", upload.single("image"), async (req, res) => {
         };
 
         const result = await streamUpload(req.file);
+        let description = "";
+
+        try {
+            const prompt = `
+      Write a short e-commerce product description.
+
+      Product: ${req.body.name}
+      Category: ${req.body.category}
+      Price: ${req.body.price}
+
+      Make it attractive, 4-5 lines with bullet points.
+      `;
+
+            const aiRes = await grok.chat.completions.create({
+                model: "grok-2-latest",
+                messages: [
+                    { role: "system", content: "You are an expert e-commerce copywriter." },
+                    { role: "user", content: prompt },
+                ],
+            });
+
+            description = aiRes.choices[0].message.content;
+
+        } catch (aiError) {
+            console.log("AI error:", aiError);
+            description = "No description available"; // fallback
+        }
         const obj = {
             name: req.body.name,
             quantity: Number(req.body.quantity),
             price: Number(req.body.price),
             image: result.secure_url,
-            category: req.body.category
+            category: req.body.category,
+            description
 
         }
         await product.create(obj);
+        console.log(obj);
         return res.json({ message: "product saved.." });
+
     }
     catch (err) {
         console.log(err);
@@ -743,26 +779,26 @@ app.get("/admin/stats", async (req, res) => {
 
 
 app.get("/admin/revenue-chart", async (req, res) => {
-  const orders = await order.find();
+    const orders = await order.find();
 
-  const monthlyData = {};
+    const monthlyData = {};
 
-  orders.forEach(item => {
-    const month = new Date(item.createdAt).toLocaleString("default", { month: "short" });
+    orders.forEach(item => {
+        const month = new Date(item.createdAt).toLocaleString("default", { month: "short" });
 
-    if (!monthlyData[month]) {
-      monthlyData[month] = 0;
-    }
+        if (!monthlyData[month]) {
+            monthlyData[month] = 0;
+        }
 
-    monthlyData[month] += Number(item.totalamount || 0);
-  });
+        monthlyData[month] += Number(item.totalamount || 0);
+    });
 
-  const result = Object.keys(monthlyData).map(month => ({
-    month,
-    revenue: monthlyData[month]
-  }));
+    const result = Object.keys(monthlyData).map(month => ({
+        month,
+        revenue: monthlyData[month]
+    }));
 
-  res.json(result);
+    res.json(result);
 });
 
 const port = process.env.PORT || 5000;
