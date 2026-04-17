@@ -239,32 +239,27 @@ app.post("/addItems", upload.single("image"), async (req, res) => {
         };
 
         const result = await streamUpload(req.file);
-        let description = "";
+        let description = "No description available";
 
         try {
-            const prompt = `
-      Write a short e-commerce product description.
+            const aiRes = await grok.responses.create({
+                model: "grok-4.20-reasoning",
+                input: `
+    Write a short e-commerce product description.
 
-      Product: ${req.body.name}
-      Category: ${req.body.category}
-      Price: ${req.body.price}
+    Product: ${req.body.name}
+    Category: ${req.body.category}
+    Price: ${req.body.price}
 
-      Make it attractive, 4-5 lines with bullet points.
-      `;
-
-            const aiRes = await grok.chat.completions.create({
-                model: "grok-2-latest",
-                messages: [
-                    { role: "system", content: "You are an expert e-commerce copywriter." },
-                    { role: "user", content: prompt },
-                ],
+    Make it attractive, 4-5 lines with bullet points.
+    `
             });
 
-            description = aiRes.choices[0].message.content;
+            description =
+                aiRes.output?.[0]?.content?.[0]?.text || description;
 
         } catch (aiError) {
             console.log("AI error:", aiError);
-            description = "No description available"; // fallback
         }
         const obj = {
             name: req.body.name,
