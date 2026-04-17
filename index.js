@@ -13,6 +13,8 @@ import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import Groq from "groq-sdk";
+import OpenAI from "openai";
+
 
 
 
@@ -215,8 +217,9 @@ const product = mongoose.model("product", productSchema);
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
-const groq = new Groq({
+const groq = new OpenAI({
   apiKey: process.env.GROQ_API_KEY,
+  baseURL: "https://api.groq.com/openai/v1",
 });
 
 app.post("/addItems", upload.single("image"), async (req, res) => {
@@ -238,33 +241,27 @@ app.post("/addItems", upload.single("image"), async (req, res) => {
         };
 
         const result = await streamUpload(req.file);
-        let description = "No description available";
+        let description = "High quality product available at best price.";
 
-    try {
-      const prompt = `
-      Write a short e-commerce product description.
+        try {
+            const response = await groq.responses.create({
+                model: "llama-3.1-8b-instant", // ✅ UPDATED MODEL
+                input: `
+    Write a short e-commerce product description.
 
-      Product: ${req.body.name}
-      Category: ${req.body.category}
-      Price: ${req.body.price}
+    Product: ${req.body.name}
+    Category: ${req.body.category}
+    Price: ₹${req.body.price}
 
-      Make it attractive, 4-5 lines with bullet points.
-      `;
+    Make it attractive, 4-5 lines with bullet points.
+    `,
+            });
 
-      const aiRes = await groq.chat.completions.create({
-        model: "llama3-8b-8192", // ✅ free Groq model
-        messages: [
-          { role: "system", content: "You are an expert e-commerce copywriter." },
-          { role: "user", content: prompt },
-        ],
-      });
+            description = response.output_text || description;
 
-      description =
-        aiRes?.choices?.[0]?.message?.content || description;
-
-    } catch (err) {
-      console.log("Groq error:", err);
-    }
+        } catch (err) {
+            console.log("Groq error:", err);
+        }
         const obj = {
             name: req.body.name,
             quantity: Number(req.body.quantity),
