@@ -209,7 +209,10 @@ const productSchema = mongoose.Schema({
         unique: false,
         required: true,
     },
-    description: { String }
+    description: {
+        type: String,
+        default: ""
+    }
 });
 const product = mongoose.model("product", productSchema);
 
@@ -217,28 +220,31 @@ const product = mongoose.model("product", productSchema);
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
+
+
+
 const groq = new OpenAI({
-  apiKey: process.env.GROQ_API_KEY,
-  baseURL: "https://api.groq.com/openai/v1",
+    apiKey: process.env.GROQ_API_KEY,
+    baseURL: "https://api.groq.com/openai/v1",
 });
+var streamUpload = (reqFile) => {
+    return new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+            { folder: "products" },
+            (error, result) => {
+                if (result) resolve(result);
+                else reject(error);
+            }
+        );
+        streamifier.createReadStream(reqFile.buffer).pipe(stream);
+    });
+};
 
 app.post("/addItems", upload.single("image"), async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ message: "Image is required" });
         }
-        const streamUpload = (reqFile) => {
-            return new Promise((resolve, reject) => {
-                const stream = cloudinary.uploader.upload_stream(
-                    { folder: "products" },
-                    (error, result) => {
-                        if (result) resolve(result);
-                        else reject(error);
-                    }
-                );
-                streamifier.createReadStream(reqFile.buffer).pipe(stream);
-            });
-        };
 
         const result = await streamUpload(req.file);
         let description = "High quality product available at best price.";
