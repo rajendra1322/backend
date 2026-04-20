@@ -141,6 +141,22 @@ app.get("/getuser", verifyToken, async (req, res) => {
     }
 });
 
+app.get("/getalluser", async(req,res)=>{
+    try{
+        const users=await user.find();
+        if(!users || user.length===0){
+            console.log("user Not found")
+            return res.json({message:"user Not found"});
+        }
+        res.json(users);
+
+    }
+    catch(err){
+        console.log(err);
+    }
+    
+})
+
 app.post("/verifyOTP", async (req, res) => {
     try {
         const { otp, email } = req.body;
@@ -271,8 +287,8 @@ Price: ₹${req.body.price}
                 (response.output_text ||
                     response.output?.[0]?.content?.[0]?.text ||
                     description)
-                    .replace(/\*\*/g, "")   // remove bold
-                    .replace(/\n/g, " ");   // remove line breaks
+                    .replace(/\*\*/g, "")   
+                    .replace(/\n/g, " ");   
 
         } catch (err) {
             console.log("Groq error:", err);
