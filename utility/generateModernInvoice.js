@@ -1,7 +1,11 @@
 import PDFDocument from "pdfkit";
+import QRCode from "qrcode";
+import dotenv from 'dotenv';
 
-const generateModernInvoice = (order) => {
-  return new Promise((resolve, reject) => {
+dotenv.config();
+
+const generateModernInvoice = async (order) => {
+  return new Promise(async (resolve, reject) => {
     try {
       const doc = new PDFDocument({ margin: 50 });
       let buffers = [];
@@ -12,10 +16,16 @@ const generateModernInvoice = (order) => {
 
       const primary = "#2b4c9a";
 
-      
       const formatCurrency = (amt) => `₹${amt.toFixed(2)}`;
 
-      
+      // ================== ✅ QR CODE GENERATION ==================
+      const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
+      const qrURL = `${FRONTEND_URL}/useraccount?orderId=${order._id}`;
+
+      const qrBase64 = await QRCode.toDataURL(qrURL);
+      const qrBuffer = Buffer.from(qrBase64.split(",")[1], "base64");
+
+      // ================== HEADER ==================
       doc
         .fontSize(22)
         .fillColor(primary)
@@ -35,13 +45,25 @@ const generateModernInvoice = (order) => {
         .text(`Invoice No: ${order._id}`, 400, 70)
         .text(`Date: ${new Date().toLocaleDateString()}`, 400, 95);
 
+      // ================== ✅ ADD QR IMAGE ==================
+      doc.image(qrBuffer, 450, 120, { width: 90 });
+
+      doc
+        .fontSize(8)
+        .fillColor("gray")
+        .text("Scan to view order", 450, 215, {
+          width: 90,
+          align: "center",
+        });
+
       doc.moveTo(50, 110).lineTo(550, 110).stroke(primary);
 
-      
+      // ================== USER ==================
       const user = order.users?.[0] || {};
 
       doc
         .fontSize(12)
+        .fillColor("black")
         .text("Billing To:", 50, 130);
 
       doc
@@ -52,12 +74,10 @@ const generateModernInvoice = (order) => {
         .font("Helvetica")
         .text(`Phone: ${user.phone || "N/A"}`, 50, 165);
 
-      // ===== TABLE HEADER =====
+      // ================== TABLE ==================
       const tableTop = 200;
 
-      doc
-        .rect(50, tableTop, 500, 25)
-        .fill(primary);
+      doc.rect(50, tableTop, 500, 25).fill(primary);
 
       doc
         .fillColor("white")
@@ -68,7 +88,6 @@ const generateModernInvoice = (order) => {
         .text("Price", 330, tableTop + 8, { width: 80, align: "right" })
         .text("Amount", 450, tableTop + 8, { width: 80, align: "right" });
 
-      // ===== TABLE BODY =====
       let y = tableTop + 35;
       let subtotal = 0;
 
@@ -90,7 +109,7 @@ const generateModernInvoice = (order) => {
         y += 25;
       });
 
-      // ===== GST CALCULATION =====
+      // ================== GST ==================
       const cgst = +(subtotal * 0.09).toFixed(2);
       const sgst = +(subtotal * 0.09).toFixed(2);
       const grandTotal = +(subtotal + cgst + sgst).toFixed(2);
@@ -110,18 +129,18 @@ const generateModernInvoice = (order) => {
         .text("SGST (9%):", 350, summaryY + 40)
         .text(formatCurrency(sgst), 450, summaryY + 40, { align: "right" });
 
-      // ===== GRAND TOTAL BOX =====
-      doc
-        .rect(350, summaryY + 70, 230, 30)
-        .fill(primary);
+      // ================== TOTAL ==================
+      doc.rect(350, summaryY + 70, 230, 30).fill(primary);
 
       doc
         .fillColor("white")
         .font("Helvetica-Bold")
         .text("Grand Total", 360, summaryY + 78)
-        .text(formatCurrency(grandTotal), 350, summaryY + 78, { align: "right" });
+        .text(formatCurrency(grandTotal), 350, summaryY + 78, {
+          align: "right",
+        });
 
-      // ===== FOOTER =====
+      // ================== FOOTER ==================
       doc
         .fillColor("gray")
         .fontSize(10)
@@ -131,7 +150,6 @@ const generateModernInvoice = (order) => {
         });
 
       doc.end();
-
     } catch (err) {
       reject(err);
     }

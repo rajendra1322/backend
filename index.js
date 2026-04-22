@@ -21,8 +21,7 @@ import OpenAI from "openai";
 const app = express();
 const allowedOrigins = [
     "http://localhost:5173",
-    "https://rajmart.vercel.app",
-    "https://*.vercel.app"
+    "https://rajmart.vercel.app"
 ];
 
 app.use(cors({
@@ -58,6 +57,8 @@ const userSchema = mongoose.Schema({
         type: String,
         required: true,
         unique: true,
+        lowercase: true,
+        trim: true,
     },
     verificationCode: String
 });
@@ -86,43 +87,42 @@ const verifyToken = (req, res, next) => {
 };
 
 app.post("/signin", async (req, res) => {
-    console.log("signin api hit...");
     try {
         const { number, email } = req.body;
-        const cleanEmail = email.toLowerCase();
-
-        console.log("Request:", req.body);
 
         if (!/^[7-9]\d{9}$/.test(number)) {
             return res.json({ message: "Invalid number" });
         }
 
-        let existingUser = await user.findOne({ email: cleanEmail });
+        const cleanEmail = email.toLowerCase().trim();
 
         const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
 
-        if (existingUser) {
-            console.log("User exists → updating OTP");
-
-            existingUser.verificationCode = verificationCode;
-            await existingUser.save();
-
-        } else {
-            console.log("New user → creating");
-
-            const newUser = new user({
+        // ✅ SINGLE ATOMIC OPERATION
+        await user.findOneAndUpdate(
+            { email: cleanEmail },     // find
+            {
                 number,
-                email: cleanEmail,
-                verificationCode,
-            });
+                verificationCode
+            },
+            {
+                upsert: true,          // create if not exists
+                new: true,
+                setDefaultsOnInsert: true
+            }
+        );
 
-            await newUser.save();
-        }
         await SendVerification(cleanEmail, verificationCode);
+
         return res.json({ message: "OTP sent successfully" });
 
     } catch (err) {
         console.log(err);
+
+        if (err.code === 11000) {
+            return res.status(400).json({ message: "Duplicate user error" });
+        }
+
         return res.status(500).json({ message: "Server error" });
     }
 });
@@ -141,20 +141,20 @@ app.get("/getuser", verifyToken, async (req, res) => {
     }
 });
 
-app.get("/getalluser", async(req,res)=>{
-    try{
-        const users=await user.find();
-        if(!users || user.length===0){
+app.get("/getalluser", async (req, res) => {
+    try {
+        const users = await user.find();
+        if (!users || users.length === 0) {
             console.log("user Not found")
-            return res.json({message:"user Not found"});
+            return res.json({ message: "user Not found" });
         }
         res.json(users);
 
     }
-    catch(err){
+    catch (err) {
         console.log(err);
     }
-    
+
 })
 
 app.post("/verifyOTP", async (req, res) => {
@@ -287,8 +287,8 @@ Price: ₹${req.body.price}
                 (response.output_text ||
                     response.output?.[0]?.content?.[0]?.text ||
                     description)
-                    .replace(/\*\*/g, "")   
-                    .replace(/\n/g, " ");   
+                    .replace(/\*\*/g, "")
+                    .replace(/\n/g, " ");
 
         } catch (err) {
             console.log("Groq error:", err);
@@ -818,6 +818,31 @@ app.get("/admin/revenue-chart", async (req, res) => {
     }));
 
     res.json(result);
+});
+
+app.get("/api/orders/:id", verifyToken, async (req, res) => {
+    try {
+        const foundOrder = await order.findById(req.params.id);
+
+        if (!foundOrder) {
+            return res.status(404).json({ message: "Order not found" });
+        }
+
+        // ✅ SECURITY CHECK (VERY IMPORTANT)
+        const isOwner = foundOrder.users.some(
+            (u) => u.id.toString() === req.userId
+        );
+
+        if (!isOwner) {
+            return res.status(403).json({ message: "Unauthorized" });
+        }
+
+        res.json(foundOrder);
+
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({ error: "Server error" });
+    }
 });
 
 const port = process.env.PORT || 5000;
