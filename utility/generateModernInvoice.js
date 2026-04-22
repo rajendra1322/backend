@@ -24,7 +24,7 @@ const generateModernInvoice = async (order) => {
     const FRONTEND_URL =
       process.env.FRONTEND_URL || "http://localhost:5173";
 
-    const qrURL = `${FRONTEND_URL}/useraccount?orderId=${order._id}`;
+    const qrURL = `${FRONTEND_URL}/Useraccount?orderId=${order._id}`;
 
     const qrBase64 = await QRCode.toDataURL(qrURL);
 
