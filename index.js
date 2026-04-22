@@ -820,29 +820,33 @@ app.get("/admin/revenue-chart", async (req, res) => {
     res.json(result);
 });
 
-app.get("/api/orders/:id", verifyToken, async (req, res) => {
-    try {
-        const foundOrder = await order.findById(req.params.id);
+app.get("/public/order/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
 
-        if (!foundOrder) {
-            return res.status(404).json({ message: "Order not found" });
-        }
-
-        // ✅ SECURITY CHECK (VERY IMPORTANT)
-        const isOwner = foundOrder.users.some(
-            (u) => u.id.toString() === req.userId
-        );
-
-        if (!isOwner) {
-            return res.status(403).json({ message: "Unauthorized" });
-        }
-
-        res.json(foundOrder);
-
-    } catch (err) {
-        console.log(err);
-        res.status(500).json({ error: "Server error" });
+    // ✅ Prevent crash
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid order ID" });
     }
+
+    const foundOrder = await order.findById(id);
+
+    if (!foundOrder) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    res.json({
+      _id: foundOrder._id,
+      products: foundOrder.products,
+      totalamount: foundOrder.totalamount,
+      status: foundOrder.status,
+      createdAt: foundOrder.createdAt
+    });
+
+  } catch (err) {
+    console.log("PUBLIC ORDER ERROR:", err.message);
+    res.status(500).json({ error: "Server error" });
+  }
 });
 
 const port = process.env.PORT || 5000;
