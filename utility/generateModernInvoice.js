@@ -20,7 +20,7 @@ const generateModernInvoice = async (order) => {
     const formatCurrency = (amt) =>
       `₹${Number(amt || 0).toFixed(2)}`;
 
-    // ================== ✅ QR CODE ==================
+    
     const FRONTEND_URL =
       process.env.FRONTEND_URL || "http://localhost:5173";
 
@@ -37,7 +37,7 @@ const generateModernInvoice = async (order) => {
       "base64"
     );
 
-    // ================== HEADER ==================
+    
     doc
       .fontSize(22)
       .fillColor(primary)
@@ -61,7 +61,7 @@ const generateModernInvoice = async (order) => {
         95
       );
 
-    // ================== QR ==================
+    
     doc.image(qrBuffer, 450, 120, { width: 90 });
 
     doc
@@ -74,7 +74,7 @@ const generateModernInvoice = async (order) => {
 
     doc.moveTo(50, 110).lineTo(550, 110).stroke(primary);
 
-    // ================== USER ==================
+    
     const user = order.users?.[0] || {};
 
     doc
@@ -90,7 +90,7 @@ const generateModernInvoice = async (order) => {
       .font("Helvetica")
       .text(`Phone: ${user.phone || "N/A"}`, 50, 165);
 
-    // ================== TABLE ==================
+    
     const tableTop = 200;
 
     doc.rect(50, tableTop, 500, 25).fill(primary);
@@ -148,7 +148,7 @@ const generateModernInvoice = async (order) => {
       y += 25;
     });
 
-    // ================== GST ==================
+    
     const GST_RATE = 0.18;
     const gst = +(subtotal * GST_RATE).toFixed(2);
     const cgst = gst / 2;
@@ -176,7 +176,7 @@ const generateModernInvoice = async (order) => {
         align: "right",
       });
 
-    // ================== TOTAL ==================
+    
     doc.rect(350, summaryY + 70, 230, 30).fill(primary);
 
     doc
@@ -187,7 +187,7 @@ const generateModernInvoice = async (order) => {
         align: "right",
       });
 
-    // ================== FOOTER ==================
+    
     doc
       .fillColor("gray")
       .fontSize(10)

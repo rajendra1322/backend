@@ -20,7 +20,7 @@ import OpenAI from "openai";
 
 const app = express();
 const allowedOrigins = [
-    "http://localhost:5173",
+    "http://localhost:5175",
     "https://rajmart.vercel.app"
 ];
 
@@ -98,15 +98,15 @@ app.post("/signin", async (req, res) => {
 
         const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
 
-        // ✅ SINGLE ATOMIC OPERATION
+        
         await user.findOneAndUpdate(
-            { email: cleanEmail },     // find
+            { email: cleanEmail },     
             {
                 number,
                 verificationCode
             },
             {
-                upsert: true,          // create if not exists
+                upsert: true,          
                 new: true,
                 setDefaultsOnInsert: true
             }
@@ -710,7 +710,7 @@ app.post("/verify-razorpay", verifyToken, async (req, res) => {
             console.log("PDF error:", err.message);
         }
 
-        // Send email with invoice
+        
         if (dbUser.email && pdfBuffer) {
             try {
                 await SendConfirmation(dbUser.email, neworder, pdfBuffer);
@@ -723,6 +723,7 @@ app.post("/verify-razorpay", verifyToken, async (req, res) => {
 
     } catch (err) {
         console.log(" ERROR IN VERIFY:", err);
+        
         return res.json({ success: false, error: err.message });
     }
 });
@@ -824,7 +825,7 @@ app.get("/public/order/:id", async (req, res) => {
   try {
     const { id } = req.params;
 
-    // ✅ Prevent crash
+    
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ message: "Invalid order ID" });
     }
